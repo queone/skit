@@ -4,7 +4,7 @@ Engineering guidance for any agent or contributor working in this repo.
 These are durable coding practices, not workflow or process rules.
 For AC workflow, see `AGENTS.md` and `development-cycle.md`. For validation
 and Package release preparation, see `build-release.md`.
-Sections above ## Project Practices are governa-maintained canon and update via canon syncs; repo-specific practices in ## Project Practices.
+Sections above ## Project Practices are govna-maintained canon and update via canon syncs; repo-specific practices in ## Project Practices.
 
 ## Identifier Strategy
 
@@ -30,7 +30,6 @@ Sections above ## Project Practices are governa-maintained canon and update via 
 - Grep the full repo for the pattern being changed before considering a fix complete
 - If a template and its rendered output diverge, the template is authoritative
 - Keep `build.sh` self-contained; do not add sourced production helper modules.
-- Propagate stack build behavior through the affected template under `internal/templates/overlays/code/stacks/`.
 
 ## Error Handling And Validation
 

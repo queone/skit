@@ -49,8 +49,8 @@ _color_init() {
   _color_on=1
   [ -n "${NO_COLOR:-}" ] && _color_on=0
   [ "${TERM:-}" = "dumb" ] && _color_on=0
-  if [ -n "${GOVERNA_FORCE_TTY:-}" ]; then
-    [ "${GOVERNA_FORCE_TTY}" = "1" ] || _color_on=0
+  if [ -n "${GOVNA_FORCE_TTY:-}" ]; then
+    [ "${GOVNA_FORCE_TTY}" = "1" ] || _color_on=0
   elif [ ! -t 1 ]; then
     _color_on=0
   fi
@@ -174,7 +174,7 @@ _require_swift() {
 }
 
 _force_resolved_args() {
-  if [ -n "${GOVERNA_SWIFT_PREP:-}" ] && [ -f Package.resolved ]; then
+  if [ -n "${GOVNA_SWIFT_PREP:-}" ] && [ -f Package.resolved ]; then
     printf '%s\n' '--force-resolved-versions'
   fi
 }
@@ -215,7 +215,7 @@ _cleanup_staging() {
   local path rc=0
   if [ -n "${_install_probe:-}" ]; then
     case "$_install_probe" in
-    "$_install_root"/governa-swift-probe.*)
+    "$_install_root"/govna-swift-probe.*)
       rm -rf -- "$_install_probe" 2>/dev/null || rc=1
       ;;
     *) rc=1 ;;
@@ -226,7 +226,7 @@ _cleanup_staging() {
     for path in "${_swift_stages[@]}"; do
       [ -n "$path" ] || continue
       case "$path" in
-      "$_install_root"/governa-swift-stage.*)
+      "$_install_root"/govna-swift-stage.*)
         rm -f -- "$path" 2>/dev/null || rc=1
         ;;
       *) rc=1 ;;
@@ -246,7 +246,7 @@ _cleanup_scratch() {
   case "$target" in / | "$home") return 1 ;; esac
   [ -n "$_repo_root" ] || return 1
   _path_is_within "$target" "$_repo_root" && return 1
-  case "$(basename "$target")" in governa-swift-build.*) ;; *) return 1 ;; esac
+  case "$(basename "$target")" in govna-swift-build.*) ;; *) return 1 ;; esac
   rm -rf -- "$target" || return 1
   _swift_scratch=''
 }
@@ -293,7 +293,7 @@ _create_scratch() {
       return 1
     fi
   fi
-  candidate=$(mktemp -d "$resolved/governa-swift-build.XXXXXX") ||
+  candidate=$(mktemp -d "$resolved/govna-swift-build.XXXXXX") ||
     _fail 'build: create Swift scratch: mktemp failed; check temporary-directory access' ||
     return 1
   candidate=$(cd "$candidate" 2>/dev/null && pwd -P) || {
@@ -312,7 +312,7 @@ _create_scratch() {
     return 1
   }
   case "$(basename "$candidate")" in
-  governa-swift-build.*) ;;
+  govna-swift-build.*) ;;
   *) _fail 'build: Swift scratch has an unsafe name; refusing cleanup'; return 1 ;;
   esac
   _swift_scratch="$candidate"
@@ -527,7 +527,7 @@ _install_products() {
       return 1
   done
   _resolve_install_root || return 1
-  _install_probe=$(mktemp -d "$_install_root/governa-swift-probe.XXXXXX") ||
+  _install_probe=$(mktemp -d "$_install_root/govna-swift-probe.XXXXXX") ||
     _fail 'build: create destination collision probe: check install-directory permissions' ||
     return 1
   for product in "${products[@]}"; do
@@ -549,7 +549,7 @@ _install_products() {
   done
   for product in "${products[@]}"; do
     artifact="$bin_path/$product"
-    stage=$(mktemp "$_install_root/governa-swift-stage.XXXXXX") ||
+    stage=$(mktemp "$_install_root/govna-swift-stage.XXXXXX") ||
       _fail 'build: create executable staging file: check install-directory permissions' ||
       return 1
     _swift_stages+=("$stage")
@@ -633,7 +633,10 @@ _build_pipeline() {
         swift build ${verbose_arg[@]+"${verbose_arg[@]}"} -c release --product "$product" "${common[@]}" || return $?
     done
   fi
-  [ "$install" -eq 1 ] || return 0
+  if [ "$install" -ne 1 ]; then
+    _emit_release_hint
+    return 0
+  fi
   local install_products=()
   local install_count=0
   if [ "$_swift_selected_count" -gt 0 ]; then
@@ -654,6 +657,29 @@ _build_pipeline() {
     printf '\n%s\n' "$(yel7 '==> Install selected Swift executables')"
   fi
   _install_products "$bin_path" "${install_products[@]}"
+  _emit_release_hint
+}
+
+_emit_release_hint() {
+  local next_tag
+  if next_tag=$(_next_patch_tag) && [ -n "$next_tag" ]; then
+    printf '\n%s\n\n    ./build.sh %s %s\n' \
+      "$(yel7 '==> To release, run:')" "$next_tag" '"<release message>"'
+  fi
+}
+
+_next_patch_tag() {
+  local tags
+  tags=$(git tag --list 2>/dev/null) || return 1
+  printf '%s\n' "$tags" | awk '
+    /^v[0-9]+\.[0-9]+\.[0-9]+$/ {
+      split(substr($0, 2), a, ".")
+      mj=a[1]+0; mn=a[2]+0; pt=a[3]+0
+      if (!found || mj>bj || (mj==bj && (mn>bn || (mn==bn && pt>bp)))) {
+        bj=mj; bn=mn; bp=pt; found=1
+      }
+    }
+    END { if (found) printf "v%d.%d.%d", bj, bn, bp+1 }'
 }
 
 _run_isolated() {
@@ -723,7 +749,7 @@ build_main() {
   fi
   _require_swift
   _require_package
-  local install="${GOVERNA_SWIFT_INSTALL:-1}"
+  local install="${GOVNA_SWIFT_INSTALL:-1}"
   if [ "$requested_count" -gt 0 ]; then
     _run_isolated _build_pipeline "$verbose" "$install" "${requested[@]}"
   else
@@ -757,8 +783,8 @@ _prep_validate_version_marker() {
     _fail "prep: marked Swift version file is missing: $(_quote "$_prep_version_path")" ||
     return 1
   local markers valid
-  markers=$(grep -c '// governa: release-version' "$_prep_version_path" || true)
-  valid=$(grep -Ec '^[[:space:]]*public static let current = "[0-9]+\.[0-9]+\.[0-9]+"[[:space:]]+// governa: release-version[[:space:]]*$' "$_prep_version_path" || true)
+  markers=$(grep -c '// govna: release-version' "$_prep_version_path" || true)
+  valid=$(grep -Ec '^[[:space:]]*public static let current = "[0-9]+\.[0-9]+\.[0-9]+"[[:space:]]+// govna: release-version[[:space:]]*$' "$_prep_version_path" || true)
   [ "$markers" -eq 1 ] && [ "$valid" -eq 1 ] ||
     _fail "prep: require exactly one well-formed release-version marker in $(_quote "$_prep_version_path")" ||
     return 1
@@ -770,7 +796,7 @@ _prep_apply_version() {
     _fail 'prep: create Swift version staging file' ||
     return 1
   awk -v version="$version" '
-    /\/\/ governa: release-version/ {
+    /\/\/ govna: release-version/ {
       sub(/"[0-9]+\.[0-9]+\.[0-9]+"/, "\"" version "\"")
     }
     { print }
@@ -814,12 +840,12 @@ _prep_apply() {
   refs=$(_prep_refs "$message")
   while IFS= read -r ref; do
     [ -n "$ref" ] || continue
-    for file in governa/"$(printf '%s' "$ref" | tr '[:upper:]' '[:lower:]')"-*.md; do
+    for file in govna/"$(printf '%s' "$ref" | tr '[:upper:]' '[:lower:]')"-*.md; do
       [ -f "$file" ] && rm -f "$file"
     done
     if [ -f plan.md ]; then
       tmp=$(mktemp "${TMPDIR:-/tmp}/swift-plan.XXXXXX")
-      grep -v "→ governa/$(printf '%s' "$ref" | tr '[:upper:]' '[:lower:]')-" plan.md >"$tmp" || true
+      grep -v "→ govna/$(printf '%s' "$ref" | tr '[:upper:]' '[:lower:]')-" plan.md >"$tmp" || true
       mv "$tmp" plan.md
     fi
   done <<EOF
@@ -862,10 +888,10 @@ prep_main() {
     printf '  Package.swift: unchanged\n  Package.resolved: unchanged\n'
   else
     [ "$no_build" -eq 1 ] ||
-      GOVERNA_SWIFT_PREP=1 GOVERNA_SWIFT_INSTALL=0 build_main
+      GOVNA_SWIFT_PREP=1 GOVNA_SWIFT_INSTALL=0 build_main
     _prep_apply "$version" "$message"
     [ "$no_build" -eq 1 ] ||
-      GOVERNA_SWIFT_PREP=1 GOVERNA_SWIFT_INSTALL=1 build_main
+      GOVNA_SWIFT_PREP=1 GOVNA_SWIFT_INSTALL=1 build_main
   fi
   quoted_message=$(_quote "$message")
   printf '\n%s\n' "$(yel7 'release command:')"

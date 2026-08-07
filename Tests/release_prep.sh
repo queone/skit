@@ -57,7 +57,7 @@ guard platforms.contains(where: {
 SWIFT
 swift "$package_validator" "$package_json" || fail 'Package.swift contract differs'
 
-mkdir -p "$fixture/Sources/SkitSupport" "$fixture/governa"
+mkdir -p "$fixture/Sources/SkitSupport" "$fixture/govna"
 cp "$source_build" "$fixture/build.sh"
 chmod +x "$fixture/build.sh"
 
@@ -68,7 +68,7 @@ let package = Package(name: "fixture")
 SWIFT
 cat >"$fixture/Sources/SkitSupport/Version.swift" <<'SWIFT'
 public enum SkitVersion {
-    public static let current = "0.1.0"  // governa: release-version
+    public static let current = "0.1.0"  // govna: release-version
     public static let unrelated = "9.9.9"
 }
 SWIFT
@@ -81,9 +81,9 @@ cat >"$fixture/CHANGELOG.md" <<'MARKDOWN'
 MARKDOWN
 cat >"$fixture/plan.md" <<'MARKDOWN'
 # Plan
-- IE9: fixture → governa/ac9-fixture.md
+- IE9: fixture → govna/ac9-fixture.md
 MARKDOWN
-printf '# AC9\n' >"$fixture/governa/ac9-fixture.md"
+printf '# AC9\n' >"$fixture/govna/ac9-fixture.md"
 
 git -C "$fixture" init -q
 
@@ -99,12 +99,15 @@ cmp "$fixture/version.before" "$fixture/Sources/SkitSupport/Version.swift" ||
   cd "$fixture"
   ./build.sh prep --no-build v0.2.0 'AC9: fixture' >/dev/null
 )
-grep -Eq 'current = "0\.2\.0"[[:space:]]+// governa: release-version' \
+grep -Eq 'current = "0\.2\.0"[[:space:]]+// govna: release-version' \
   "$fixture/Sources/SkitSupport/Version.swift" || fail 'version was not updated'
 grep -q 'unrelated = "9\.9\.9"' "$fixture/Sources/SkitSupport/Version.swift" ||
   fail 'unrelated Swift text changed'
+[ ! -e "$fixture/govna/ac9-fixture.md" ] || fail 'referenced Govna AC was not deleted'
+! grep -q 'govna/ac9-fixture.md' "$fixture/plan.md" ||
+  fail 'matching Govna AC pointer was not removed'
 
-printf '%s\n' 'public static let other = "0.2.0" // governa: release-version' \
+printf '%s\n' 'public static let other = "0.2.0" // govna: release-version' \
   >>"$fixture/Sources/SkitSupport/Version.swift"
 set +e
 (
@@ -117,7 +120,7 @@ set -e
 
 cat >"$fixture/Sources/SkitSupport/Version.swift" <<'SWIFT'
 public enum SkitVersion {
-    public static let current = "invalid"  // governa: release-version
+    public static let current = "invalid"  // govna: release-version
 }
 SWIFT
 set +e

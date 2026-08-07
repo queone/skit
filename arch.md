@@ -33,9 +33,9 @@ terminal-style detection, and the shared release version.
 - `AGENTS.md`: base governance contract
 - `plan.md`: prioritized roadmap and approved direction
 - `build.sh`: canonical SwiftPM build, test, install, and release script
-- `governa/development-cycle.md`: workflow from roadmap through release
-- `governa/ac-template.md`: acceptance-criteria template for new work
-- `governa/build-release.md`: build, test, and release rules
+- `govna/development-cycle.md`: workflow from roadmap through release
+- `govna/ac-template.md`: acceptance-criteria template for new work
+- `govna/build-release.md`: build, test, and release rules
 
 ## Data And Control Flow
 
@@ -56,7 +56,7 @@ terminal-style detection, and the shared release version.
 - Allow Swift-toolchain modules shipped by Apple, including Foundation.
 - Prohibit third-party packages by default.
 - Update the unique marked version in `SkitSupport` during release prep.
-- Keep Governa outside utility runtime behavior.
+- Keep Govna outside utility runtime behavior.
 
 ## Conventions
 

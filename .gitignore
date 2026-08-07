@@ -1,5 +1,10 @@
 # Build artifacts
+*.out
+*.test
 *.exe
+
+# Coverage
+build-cover-*.out
 
 # OS files
 .DS_Store
