@@ -16,7 +16,7 @@ fixture=$(mktemp -d "${TMPDIR:-/tmp}/skit-cli.XXXXXX")
 trap 'rm -rf "$fixture"' EXIT HUP INT TERM
 
 cat >"$fixture/dos2unix-help" <<'TEXT'
-dos2unix v0.1.2
+dos2unix v0.1.3
 Preview or convert CRLF line endings — https://github.com/queone/skit
 Usage
   dos2unix [options] [--] FILE
@@ -31,7 +31,7 @@ Options
   --             End option parsing
 TEXT
 cat >"$fixture/tree-help" <<'TEXT'
-tree v0.1.2
+tree v0.1.3
 Directory tree printer — https://github.com/queone/skit
 Usage
   tree [options] [directory]
@@ -55,23 +55,23 @@ TEXT
 for flag in -h '-?' --help; do
   NO_COLOR=1 "$dos2unix_bin" "$flag" >"$fixture/out" 2>"$fixture/err"
   [ ! -s "$fixture/err" ] || fail "dos2unix $flag wrote stderr"
-  grep -q '^dos2unix v0\.1\.2$' "$fixture/out" || fail "dos2unix $flag version header"
+  grep -q '^dos2unix v0\.1\.3$' "$fixture/out" || fail "dos2unix $flag version header"
   grep -q 'dos2unix \[options\] \[--\] FILE' "$fixture/out" || fail "dos2unix $flag usage"
   grep -q 'https://github.com/queone/skit' "$fixture/out" || fail "dos2unix $flag source URL"
   cmp "$fixture/out" "$fixture/dos2unix-help" || fail "dos2unix $flag exact help"
 
   NO_COLOR=1 "$tree_bin" "$flag" >"$fixture/out" 2>"$fixture/err"
   [ ! -s "$fixture/err" ] || fail "tree $flag wrote stderr"
-  grep -q '^tree v0\.1\.2$' "$fixture/out" || fail "tree $flag version header"
+  grep -q '^tree v0\.1\.3$' "$fixture/out" || fail "tree $flag version header"
   grep -q 'tree \[options\] \[directory\]' "$fixture/out" || fail "tree $flag usage"
   grep -q 'https://github.com/queone/skit' "$fixture/out" || fail "tree $flag source URL"
   cmp "$fixture/out" "$fixture/tree-help" || fail "tree $flag exact help"
 done
 
 for flag in -v --version; do
-  [ "$(NO_COLOR=1 "$dos2unix_bin" ignored "$flag" extra)" = 'dos2unix v0.1.2' ] ||
+  [ "$(NO_COLOR=1 "$dos2unix_bin" ignored "$flag" extra)" = 'dos2unix v0.1.3' ] ||
     fail "dos2unix $flag output"
-  [ "$(NO_COLOR=1 "$tree_bin" ignored "$flag" extra)" = 'tree v0.1.2' ] ||
+  [ "$(NO_COLOR=1 "$tree_bin" ignored "$flag" extra)" = 'tree v0.1.3' ] ||
     fail "tree $flag output"
 done
 
