@@ -53,8 +53,11 @@ Files with a documented canon-above/local-below boundary, compared only above th
 | File | Boundary |
 |---|---|
 | `AGENTS.md` | `## Project Rules` |
+| CODE `govna/build-release.md` | `## Project Practices` |
 | `govna/development-guidelines.md` | `## Project Practices` |
 | `govna/editing-guidelines.md` | `## Project Practices` |
+
+Treat an existing CODE `govna/build-release.md` without its registered boundary as a one-time reviewed migration. Route it to `ambiguity` for full-file review even when a legacy whole-file preserve marker exists, and retain that marker as evidence. During reapply, leave the boundary-less file unchanged and emit a manual migration item. Place reviewed repository-specific release mechanics below the new boundary, sync rendered canon above it, and remove any obsolete whole-file preserve marker only through the consumer's authorized adoption cycle. Keep DOC `govna/release.md` outside this mixed-content model.
 
 ## Preserve-marker phrase set
 
@@ -65,7 +68,7 @@ A Director locks a local variant against future sync by placing one of these fou
 - `intentional divergence: <path>`
 - `<path>: keep local`
 
-A marker on a missing file suppresses `missing-in-target` to a suppressed `match`; a marker on a divergent file routes it to `preserve` instead of `ambiguity`/`clear-sync`. The sole exception is an eligible stale-version-only `govna/metadata.txt`, whose canon-owned `canon_version` cannot be pinned by a preserve marker.
+A marker on a missing file suppresses `missing-in-target` to a suppressed `match`; a marker on a divergent file routes it to `preserve` instead of `ambiguity`/`clear-sync`. Exceptions are an eligible stale-version-only `govna/metadata.txt`, whose canon-owned `canon_version` cannot be pinned, and a boundary-less CODE `govna/build-release.md`, whose legacy whole-file marker remains migration evidence without suppressing review.
 
 ## Target-only detection
 
@@ -84,6 +87,13 @@ Audit does not flag arbitrary consumer-owned governance documents that have none
 `govna/canon-baseline.txt` records the exact prior rendered comparison region for each governed file. Its first line is `govna-canon-baseline-v1`, its second line is `canon_version = vMAJOR.MINOR.PATCH`, and each sorted remaining line is `<path><TAB><scope><TAB><sha256>`. Scope is `full` or `before:<boundary-heading>`. The manifest excludes itself and is never classified as an ordinary governed file.
 
 Audit fails before emission for malformed fields, duplicate or unsorted paths, invalid hashes, unknown or mismatched scopes, or a baseline canon version newer than embedded canon. A valid manifest missing one file entry routes that divergent file to `ambiguity`. Audit leaves the baseline unchanged; the emitted AC installs or replaces it last after all other work succeeds.
+
+- Accept legacy `full` scope only for `govna/build-release.md` in a CODE target whose baseline canon version predates v0.11.0.
+- Retain the legacy hash only as migration evidence.
+- Apply normal boundary migration and comparison behavior after parsing.
+- Reject the exception for DOC targets, other paths, v0.11.0-or-newer baselines, and every other mismatched scope.
+- Leave the accepted baseline unchanged during audit.
+- Replace it with the rendered bounded baseline only as the emitted adoption AC's final step.
 
 ## Canon-coherence precondition
 

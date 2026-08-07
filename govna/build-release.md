@@ -26,6 +26,8 @@ This repo uses a self-contained `build.sh` for all build, release-prep, and rele
 - automated tests pass
 - changed docs match actual behavior
 
+
+
 ## Canonical Build Commands
 
 ```bash
@@ -65,9 +67,7 @@ The operator flow is two steps:
 
 1. **Run `./build.sh prep vX.Y.Z "message"`.** Stages version bumps, inserts the CHANGELOG row, deletes completed AC files, sweeps matching AC-pointer IE lines from `plan.md`, runs validation builds before and after, and prints the canonical release command. The agent determines the version (semver classification from the AC's scope) and drafts the release message (≤ 80 characters) before invoking prep. Flags: `--dry-run`/`-n` prints intended writes without touching the working tree; `--no-build`/`-B` skips the pre- and post-check builds.
 
-   `prep` validates exactly one `// govna: release-version` marker in `Sources/SkitSupport/Version.swift` and updates its strict SemVer value during the write phase.
-- Update version-output expectations in Swift and CLI integration tests when prep changes the marked version.
-- Rerun `./build.sh` after correcting version-output expectations reported by the post-check build.
+   Before running prep, satisfy this repository's declared version-target contract and keep repository/package and independently versioned utility declarations aligned as required by its Project Practices.
 2. **Run the printed release command (`./build.sh vX.Y.Z "message"`).** Shows `git status --short`, lists every git step it will execute, and prompts for interactive confirmation. On approval it orchestrates `git add → commit → tag → push tag → push branch`.
 
 Present only the release command after prep; do not add trailing commentary about wrapper routing or prompts. The director already knows.
@@ -79,7 +79,7 @@ Present only the release command after prep; do not add trailing commentary abou
 1. **Validate inputs.** Semver pattern (`vX.Y.Z`), message non-empty and ≤ 80 characters.
 2. **Validate git state.** Inside a git work tree, target tag does not exist yet, HEAD is not at the latest tag with a clean working tree.
 3. **Pre-check build.** `./build.sh` runs before any writes; skip it with `--no-build`/`-B` only for single-utility repositories or with `--dry-run`/`-n`.
-4. **Detect and validate version targets.** Require exactly one well-formed `// govna: release-version` marker on `SkitVersion.current` in `Sources/SkitSupport/Version.swift` and reject missing, duplicate, or malformed markers before any write.
+4. **Detect and validate version targets.** Follow this repository's Project Practices and stack build implementation. Reject missing, malformed, duplicate, or unsafe targets before any write.
 5. **Detect CHANGELOG targets + fail-fast idempotency guard.** Root `CHANGELOG.md`. If it already contains a row for the target version, prep exits with a fatal error before any writes.
 6. **Parse AC refs.** `AC[0-9]+` scan on the release message; composites like `AC<m>+AC<n>` yield multiple refs.
 7. **Apply writes.** Version bumps (per-file idempotent no-op when the file already has the target value); CHANGELOG row insertion under `| Unreleased | |`; AC file deletions (AC files are deleted whole; there are no separate companion files); AC-pointer IE-line sweep from `plan.md` (lines matching `→ govna/ac<N>-` for each released AC). Skipped when `--dry-run`/`-n`. Idempotent re-runs leave already-swept lines alone.
@@ -93,3 +93,11 @@ CHANGELOG row shape (enforced by prep's insertion code and by convention):
 - Summaries are single-line, ≤ 500 characters; lead with the AC reference if any.
 - Versions are unprefixed (`0.29.0`, not `v0.29.0`).
 - Do not backfill historical tags or invent alternative shapes (Keep-a-Changelog, sectioned `## vX.Y.Z`, etc.).
+
+## Project Practices
+
+- Validate exactly one well-formed `// govna: release-version` marker on `SkitVersion.current` before prep writes.
+- Update `SkitVersion.current` to the target version during prep.
+- Reject missing, duplicate, or malformed release-version markers before prep writes.
+- Update Swift and CLI version-output expectations after changing the release version.
+- Rerun `./build.sh` after synchronizing version-output expectations.

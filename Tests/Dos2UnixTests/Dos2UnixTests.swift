@@ -104,7 +104,7 @@ final class Dos2UnixTests: XCTestCase {
     )
     XCTAssertEqual(
       try runDos2Unix(arguments: ["--version"]),
-      Data("dos2unix v0.1.3\n".utf8)
+      Data("dos2unix v0.1.4\n".utf8)
     )
 
     var standardError = Data()

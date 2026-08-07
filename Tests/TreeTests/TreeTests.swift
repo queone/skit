@@ -147,7 +147,7 @@ final class TreeTests: XCTestCase {
     let coloredText = String(decoding: coloredHelp.stdout, as: UTF8.self)
     XCTAssertTrue(coloredText.contains("\u{1B}[38;5;15mtree\u{1B}[0m"))
     XCTAssertTrue(coloredText.contains("\u{1B}[38;5;15mUsage\u{1B}[0m"))
-    XCTAssertEqual(try runTree(arguments: ["--version"]).stdout, Data("tree v0.1.3\n".utf8))
+    XCTAssertEqual(try runTree(arguments: ["--version"]).stdout, Data("tree v0.1.4\n".utf8))
 
     var standardError = Data()
     let code = executeTree(
