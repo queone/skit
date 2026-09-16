@@ -3,6 +3,7 @@
 | Version | Summary |
 |---------|---------|
 | Unreleased | |
+| 0.1.7 | AC9: adopt Govna v0.61.0 canon |
 | 0.1.6 | AC8: adopt Govna v0.60.0 canon |
 | 0.1.5 | AC7: migrate preserve state to Govna registry |
 | 0.1.4 | AC6: sync Govna v0.12.0 canon and migrate release boundary |
