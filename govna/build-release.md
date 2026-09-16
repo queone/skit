@@ -2,11 +2,11 @@
 
 ## Build and Test Rules
 
-- use one canonical local build command and keep this document current
-- run formatting, static checks, tests, and packaging through that command or documented sequence
-- do not trigger release work during routine implementation
+- Keep one documented canonical build command.
+- Route formatting, checks, tests, and packaging through it.
+- Keep release work out of routine implementation.
 
-This repo uses a self-contained `build.sh` for all build, release-prep, and release work. No external govna tools are required; everything runs directly from `build.sh`.
+Use self-contained `build.sh` for build, release prep, and release work without external govna tools.
 
 ### Build Presentation
 
@@ -21,10 +21,7 @@ This repo uses a self-contained `build.sh` for all build, release-prep, and rele
 
 ## Minimum Validation
 
-- formatting passes
-- static checks pass
-- automated tests pass
-- changed docs match actual behavior
+- Require formatting, static checks, automated tests, and behavior-aligned docs to pass.
 
 
 
@@ -42,54 +39,104 @@ To scope the run to selected commands:
 
 Use space-separated target names. Supported CODE stacks may retain package-wide shared-code validation while limiting target-specific checks, tests, artifacts, and installation to the selected targets.
 
-Run `./build.sh` without targets for repository-wide validation. Release-prep pre-change and post-change validation always use this package-wide form.
+Run `./build.sh` without targets for repository-wide validation. Follow the applicable stack guidance above for release-prep evidence, pre-change validation, and build-state reuse. Release-prep validation uses the package-wide form.
 
 ## Independent Utility Versions
 
 - Treat the repository/package version as the version input and release metadata governed by the existing release mechanism.
 - Require one normalized record for each installable utility with its canonical target name, declaration location, declared version, and `--version` invocation.
 - Accept only `^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$` as a strict stable SemVer declaration.
-- Require `--version` to exit 0, print exactly `<utility-id> <MAJOR.MINOR.PATCH>` or `<utility-id> v<MAJOR.MINOR.PATCH>` plus its newline to stdout, and write nothing to stderr.
+- Require `--version` to exit 0.
+- Require `--version` to print exactly `<utility-id> <MAJOR.MINOR.PATCH>` or `<utility-id> v<MAJOR.MINOR.PATCH>` plus its newline to stdout.
+- Require `--version` to write nothing to stderr.
 - Validate every declaration before compilation.
 - Validate each compiled utility result before installing that utility.
 - Validate every compiled utility result before release-metadata writes.
 - Reject missing, empty, malformed, duplicate, orphaned, and mis-mapped records with a non-zero error that names the utility and recovery action.
 - Preserve all independent utility declarations and outputs during repository release prep.
 
-## Pre-Release Checklist (`Package`, `package`, `pack`, or `prep`)
+## Pre-Release Checklist
 
-Do not start this checklist unless the director explicitly requests standalone
-`Package`, `package`, `pack`, or `prep` in the active Ratified AC context.
-Do not treat `./build.sh prep ...` or ordinary build-preparation language as a
-workflow request.
+- Start this checklist only when the Director explicitly requests a valid Package instruction for the established Ratified release batch.
+- Map every unpackaged AC with implementation in the unreleased repository state to the complete pending release batch.
+- Require every pending release-batch member to complete Ratify before prep.
+- Reject prep while excluded implemented work remains in the unreleased repository state.
+- Require the unique release-message AC-reference set to equal the established release batch before prep.
+- Require the established release batch to equal the complete pending release batch before prep.
+- Reject a release message longer than 80 bytes before prep.
+- Prohibit a smaller release batch while excluded implemented work remains.
+- Prohibit automatic release-batch splitting.
+- Do not treat `./build.sh prep ...` or ordinary build-preparation language as a workflow request.
+- Apply this checklist equally to an established empty release batch.
+- Describe each direct-handled change in the release message for an empty release batch.
+- Reject a release message without AC references while any unpackaged implemented AC exists.
 
-The operator flow is two steps:
+Note: the operator flow has two steps.
 
-1. **Run `./build.sh prep vX.Y.Z "message"`.** Stages version bumps, inserts the CHANGELOG row, deletes completed AC files, sweeps matching AC-pointer IE lines from `plan.md`, runs validation builds before and after, and prints the canonical release command. The agent determines the version (semver classification from the AC's scope) and drafts the release message (≤ 80 characters) before invoking prep. Flags: `--dry-run`/`-n` prints intended writes without touching the working tree; `--no-build`/`-B` skips the pre- and post-check builds.
+1. **Run prep.**
+   - Classify the AC scope under semver.
+   - Draft a release message that names the delivered user-visible result and every established release-batch AC reference in no more than 80 bytes.
+   - Name each direct-handled companion change inside that user-visible result without an AC reference.
+   - Keep the release message on one line and inside one Markdown table cell.
+   - Exclude every AC reference outside the established release batch.
+   - Use the successful final full build and clean Ratify review as current Package evidence.
+   - Use the successful final full build as current Package evidence for an empty release batch.
+   - Rerun applicable validation before prep when Package evidence is missing or stale.
+   - Run the stack-defined `./build.sh prep vX.Y.Z "message"` invocation.
+   - Pass current validation evidence with `--validation-token` or `-t` when supported.
+   - Keep Go prep free of canonical build, Go build, and Go dependency commands.
+   - Reserve validation-token evidence for Rust prep.
+   - Refresh validation-token evidence for Rust prep.
+   - Use `--dry-run` or `-n` to inspect without writes.
 
    Before running prep, satisfy this repository's declared version-target contract and keep repository/package and independently versioned utility declarations aligned as required by its Project Practices.
-2. **Run the printed release command (`./build.sh vX.Y.Z "message"`).** Shows `git status --short`, lists every git step it will execute, and prompts for interactive confirmation. On approval it orchestrates `git add → commit → tag → push tag → push branch`.
+2. **Run the printed release command.**
+   - Run `./build.sh vX.Y.Z "message"`.
+   - Confirm the displayed candidate files and exact release sequence.
+   - Approve the interactive prompt to commit, compile, validate, install, tag, and push.
 
-Present only the release command after prep; do not add trailing commentary about wrapper routing or prompts. The director already knows.
+- End the structured Package completion report with `Run below to release:`.
+- Place the exact release command immediately after that line.
+- Add nothing after the release command.
 
 ### Appendix: what prep does
 
-`./build.sh prep` runs nine phases internally so the operator flow above stays short. Each phase has a clear failure mode:
+`./build.sh prep` performs release bookkeeping in every CODE stack. Go and Terraform prep perform bookkeeping only. Rust prep adds a fallback pre-change full build when validation evidence is missing or stale and one post-change full build after its writes. Swift prep runs the canonical build before its writes and again with installation after them unless `-B` skips both. Every stack follows these bookkeeping phases:
 
-1. **Validate inputs.** Semver pattern (`vX.Y.Z`), message non-empty and ≤ 80 characters.
+1. **Validate inputs.** Require strict stable SemVer and one non-empty, single-line, table-safe message of no more than 80 bytes.
 2. **Validate git state.** Inside a git work tree, target tag does not exist yet, HEAD is not at the latest tag with a clean working tree.
-3. **Pre-check build.** `./build.sh` runs before any writes; skip it with `--no-build`/`-B` only for single-utility repositories or with `--dry-run`/`-n`.
-4. **Detect and validate version targets.** Follow this repository's Project Practices and stack build implementation. Reject missing, malformed, duplicate, or unsafe targets before any write.
-5. **Detect CHANGELOG targets + fail-fast idempotency guard.** Root `CHANGELOG.md`. If it already contains a row for the target version, prep exits with a fatal error before any writes.
-6. **Parse AC refs.** `AC[0-9]+` scan on the release message; composites like `AC<m>+AC<n>` yield multiple refs.
-7. **Apply writes.** Version bumps (per-file idempotent no-op when the file already has the target value); CHANGELOG row insertion under `| Unreleased | |`; AC file deletions (AC files are deleted whole; there are no separate companion files); AC-pointer IE-line sweep from `plan.md` (lines matching `→ govna/ac<N>-` for each released AC). Skipped when `--dry-run`/`-n`. Idempotent re-runs leave already-swept lines alone.
-8. **Post-check build.** `./build.sh` run after writes; skipped with `--no-build`/`-B` or `--dry-run`/`-n`.
-9. **Print release command.** Labeled block: `release command:` followed by the indented command `./build.sh vX.Y.Z "message"`.
+3. **Process version targets.**
+   - Detect every version target.
+   - Validate every version target.
+   - Follow this repository's Project Practices.
+   - Follow the stack build implementation.
+   - Reject missing, malformed, duplicate, or unsafe targets before any write.
+   - Reject a bumped utility's README whose `### Usage` block cannot match the help probe.
+4. **Guard CHANGELOG shape and idempotency.**
+   - Detect the root `CHANGELOG.md` target.
+   - Require the canonical heading and two-column table.
+   - Reject an existing row for the target version before any write.
+5. **Parse AC refs.** Scan the release message for `AC[0-9]+`; require one matching AC file for every unique reference after the Operator verifies exact release-batch equality. Accept a message without AC references.
+6. **Apply writes.**
+   - Apply idempotent version bumps.
+   - Rewrite each bumped utility's README `### Usage` version line.
+   - Insert the CHANGELOG row under `| Unreleased | |`.
+   - Delete each released AC file whole.
+   - Sweep matching AC-pointer IE lines from `plan.md`.
+   - Skip writes under `--dry-run` or `-n`.
+   - Leave already-swept lines unchanged on rerun.
+7. **Verify and report.** Reject results outside the planned paths, verify every planned transformation, and print one shell-safe two-argument release command.
 
 CHANGELOG row shape (enforced by prep's insertion code and by convention):
 
-- File shape: `# Changelog` heading, then a 2-column markdown table (`| Version | Summary |` with a `|---------|---------|` separator); first data row is `| Unreleased | |`, followed by one row per release (e.g., `| <version> | <AC-ref>: <one-line summary> |`).
-- Summaries are single-line, ≤ 500 characters; lead with the AC reference if any.
+- Use a `# Changelog` heading.
+- Follow it with the two-column `| Version | Summary |` table.
+- Use `|---------|---------|` as the separator.
+- Keep `| Unreleased | |` as the first data row.
+- Add one row per release.
+- Keep summaries single-line and no longer than 500 characters.
+- Escape each literal pipe in a summary as `\|`.
+- Lead summaries with the AC reference when one exists.
 - Versions are unprefixed (`0.29.0`, not `v0.29.0`).
 - Do not backfill historical tags or invent alternative shapes (Keep-a-Changelog, sectioned `## vX.Y.Z`, etc.).
 
